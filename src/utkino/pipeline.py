@@ -185,7 +185,7 @@ def build_data_quality(guests: list) -> dict:
     missing_city = [guest for guest in guests if not guest.city.strip()]
     missing_category = [guest for guest in guests if not guest.has_room_category]
     missing_name = [guest for guest in guests if not guest.guest_name.strip()]
-    zero_nights_with_revenue = [
+    no_show_bookings = [
         guest for guest in guests if guest.nights == 0 and guest.total_revenue > 0
     ]
     room_revenue_gt_total = [
@@ -202,12 +202,16 @@ def build_data_quality(guests: list) -> dict:
             len(missing_category) / len(guests) if guests else 0.0
         ),
         "missing_guest_name_count": len(missing_name),
-        "zero_nights_with_revenue_count": len(zero_nights_with_revenue),
+        "no_show_booking_count": len(no_show_bookings),
+        "no_show_booking_revenue": sum(
+            guest.total_revenue for guest in no_show_bookings
+        ),
         "room_revenue_gt_total_count": len(room_revenue_gt_total),
         "unknown_segment_count": len(unknown_segments),
         "notes": [
             "Детализация по дополнительным услугам заполнена не для всех гостей.",
             "ФИО показываются только в детальных таблицах и топах.",
+            "Нулевые ночи при наличии дохода считаются no-show бронированиями.",
         ],
     }
 
