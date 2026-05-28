@@ -211,7 +211,7 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
         [
             row
             for row in clean_guests
-            if as_int(row, "arrivals") == 0 and as_float(row, "nights") > 0
+            if as_int(row, "arrivals") == 0
         ],
         key=lambda row: as_float(row, "total_revenue"),
         reverse=True,

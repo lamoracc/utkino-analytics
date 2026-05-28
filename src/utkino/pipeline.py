@@ -348,9 +348,7 @@ def build_data_quality(guests: list) -> dict:
     missing_city = [guest for guest in guests if not guest.city.strip()]
     missing_category = [guest for guest in guests if not guest.has_room_category]
     missing_name = [guest for guest in guests if not guest.guest_name.strip()]
-    no_show_bookings = [
-        guest for guest in guests if guest.arrivals == 0 and guest.nights > 0
-    ]
+    no_show_bookings = [guest for guest in guests if guest.arrivals == 0]
     room_revenue_gt_total = [
         guest for guest in guests if guest.room_revenue > guest.total_revenue
     ]
@@ -374,7 +372,7 @@ def build_data_quality(guests: list) -> dict:
         "notes": [
             "Детализация по дополнительным услугам заполнена не для всех гостей.",
             "ФИО показываются только в детальных таблицах и топах.",
-            "Ноль заездов при наличии забронированных ночей считается no-show бронированием.",
+            "Ноль фактических заездов считается no-show бронированием.",
         ],
     }
 
@@ -404,7 +402,7 @@ def build_audit_report(
         "decision_rules": [
             "Финансовые суммы всегда берутся из листа 'аналитика 2025'.",
             "Лист 'категории номеров' обогащает детали гостя, но не заменяет финансовые суммы.",
-            "No-show бронирования считаются валидными строками, если заездов ноль, а забронированные ночи есть.",
+            "No-show бронирования считаются валидными строками, если фактических заездов ноль.",
             "География и услуги показываются с предупреждением о неполной заполненности.",
         ],
     }
