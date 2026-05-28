@@ -17,10 +17,11 @@ class UtkinoApp:
     def __init__(self, root: Tk) -> None:
         self.root = root
         self.root.title("Utkino Analytics")
-        self.root.geometry("620x260")
-        self.root.minsize(560, 240)
+        self.root.geometry("680x330")
+        self.root.minsize(620, 300)
 
         self.selected_file = StringVar(value="")
+        self.output_dir = StringVar(value=str(ROOT / "reports"))
         self.status = StringVar(value="Выберите Excel-файл отчета гостиницы.")
         self.report_path: Path | None = None
 
@@ -46,6 +47,20 @@ class UtkinoApp:
         self.file_entry.pack(side="left", fill="x", expand=True)
 
         ttk.Button(file_row, text="Выбрать Excel", command=self.choose_file).pack(
+            side="left",
+            padx=(8, 0),
+        )
+
+        output_label = ttk.Label(frame, text="Папка для сохранения отчетов")
+        output_label.pack(anchor="w", pady=(14, 4))
+
+        output_row = ttk.Frame(frame)
+        output_row.pack(fill="x")
+
+        self.output_entry = ttk.Entry(output_row, textvariable=self.output_dir)
+        self.output_entry.pack(side="left", fill="x", expand=True)
+
+        ttk.Button(output_row, text="Выбрать папку", command=self.choose_output_dir).pack(
             side="left",
             padx=(8, 0),
         )
@@ -87,10 +102,23 @@ class UtkinoApp:
             self.open_button.configure(state="disabled")
             self.report_path = None
 
+    def choose_output_dir(self) -> None:
+        path = filedialog.askdirectory(
+            title="Выберите папку для сохранения отчетов",
+            initialdir=self.output_dir.get() or str(ROOT),
+        )
+        if path:
+            self.output_dir.set(path)
+            self.status.set("Папка отчетов выбрана.")
+
     def generate_report(self) -> None:
         input_path = Path(self.selected_file.get())
         if not input_path.exists():
             messagebox.showwarning("Файл не выбран", "Выберите Excel-файл отчета.")
+            return
+        output_dir = Path(self.output_dir.get())
+        if not output_dir:
+            messagebox.showwarning("Папка не выбрана", "Выберите папку для отчетов.")
             return
 
         self.generate_button.configure(state="disabled")
@@ -100,16 +128,16 @@ class UtkinoApp:
 
         thread = threading.Thread(
             target=self._generate_report_worker,
-            args=(input_path,),
+            args=(input_path, output_dir),
             daemon=True,
         )
         thread.start()
 
-    def _generate_report_worker(self, input_path: Path) -> None:
+    def _generate_report_worker(self, input_path: Path, output_dir: Path) -> None:
         try:
             result = build_report_from_excel(
                 input_file=input_path,
-                report_dir=make_report_dir(ROOT / "reports"),
+                report_dir=make_report_dir(output_dir),
             )
         except Exception as error:
             self.root.after(0, self._generation_failed, str(error))
