@@ -36,6 +36,19 @@ python .\run_app.py
 3. нажмите `Сформировать отчет`;
 4. нажмите `Открыть отчет`.
 
+## Сборка Windows-приложения
+
+Для сборки `.exe`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build_exe.ps1
+```
+
+Готовые файлы появятся в `release/`:
+
+- `UtkinoAnalytics.exe`;
+- `README.txt`.
+
 В HTML-отчете есть интерактивные модальные окна:
 
 - KPI `Общий доход` открывает топ источников выручки;

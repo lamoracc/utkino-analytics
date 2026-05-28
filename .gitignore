@@ -2,6 +2,10 @@
 Data/
 outputs/
 reports/
+build/
+dist/
+*.spec
+release/
 
 # Python cache files.
 __pycache__/
