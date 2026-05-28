@@ -83,17 +83,31 @@ class CategoryRow:
 
 
 def parse_money(value: str) -> float:
-    cleaned = (value or "").strip().replace(" ", "").replace("%", "").replace(",", "")
+    cleaned = (
+        str(value or "")
+        .strip()
+        .replace(" ", "")
+        .replace("\u00a0", "")
+        .replace("%", "")
+        .replace("₽", "")
+        .replace(",", "")
+    )
     if not cleaned or cleaned == "-":
         return 0.0
-    return float(cleaned)
+    try:
+        return float(cleaned)
+    except ValueError:
+        return 0.0
 
 
 def parse_int(value: str) -> int:
-    cleaned = (value or "").strip().replace(",", ".")
+    cleaned = str(value or "").strip().replace(" ", "").replace("\u00a0", "").replace(",", ".")
     if not cleaned:
         return 0
-    return int(float(cleaned))
+    try:
+        return int(float(cleaned))
+    except ValueError:
+        return 0
 
 
 def normalize_city(value: str) -> str:
@@ -142,7 +156,7 @@ def looks_like_guest(row: list[str]) -> bool:
         return False
     if row[0].strip() == "ФИО гостя":
         return False
-    return bool(row[2].strip() and row[7].strip())
+    return bool(row[0].strip() and any(row[index].strip() for index in (2, 5, 6, 7)))
 
 
 def parse_main_sheet(csv_dir: Path) -> list[GuestRow]:
@@ -216,7 +230,7 @@ def parse_category_sheet(csv_dir: Path) -> list[CategoryRow]:
         if len(row) < 6 or row[0].strip() == "ФИО гостя":
             continue
 
-        if not row[2].strip() or not row[5].strip():
+        if not any(row[index].strip() for index in (2, 3, 4, 5)):
             continue
 
         category_rows.append(

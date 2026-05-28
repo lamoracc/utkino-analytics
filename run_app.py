@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import threading
 import webbrowser
+from json import JSONDecodeError
 from pathlib import Path
 from tkinter import Tk, StringVar, filedialog, messagebox
 from tkinter import ttk
@@ -140,10 +141,38 @@ class UtkinoApp:
                 report_dir=make_report_dir(output_dir),
             )
         except Exception as error:
-            self.root.after(0, self._generation_failed, str(error))
+            self.root.after(0, self._generation_failed, self._format_error(error))
             return
 
         self.root.after(0, self._generation_finished, result)
+
+    def _format_error(self, error: Exception) -> str:
+        message = str(error).strip()
+        if isinstance(error, PermissionError):
+            return (
+                "Не удалось записать файлы отчета. Закройте открытый отчет, Excel, "
+                "предпросмотр в проводнике или синхронизацию папки и повторите запуск."
+            )
+        if isinstance(error, FileNotFoundError):
+            return (
+                "В Excel не найден один из обязательных листов или файл недоступен. "
+                "Проверьте, что выбран именно годовой отчет гостиницы."
+            )
+        if isinstance(error, JSONDecodeError):
+            return (
+                "Не удалось прочитать служебные данные отчета. Попробуйте выбрать "
+                "новую пустую папку для сохранения и сформировать отчет заново."
+            )
+        if isinstance(error, ValueError):
+            return (
+                "В отчете есть ячейки в неожиданном формате. Программа попыталась "
+                "обработать пустые и некорректные числа как 0, но структура файла "
+                "слишком сильно отличается от ожидаемой."
+            )
+        return message or (
+            "Не удалось сформировать отчет. Проверьте, что выбран Excel-файл отчета "
+            "и папка сохранения доступна для записи."
+        )
 
     def _generation_finished(self, result: dict) -> None:
         self.progress.stop()

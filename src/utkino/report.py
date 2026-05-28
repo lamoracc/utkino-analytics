@@ -12,23 +12,25 @@ def read_json(path: Path) -> dict:
 
 
 def read_csv(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
     with path.open(encoding="utf-8-sig", newline="") as handle:
         return list(csv.DictReader(handle))
 
 
 def money(value: float | str) -> str:
-    return f"{float(value):,.0f}".replace(",", " ") + " ₽"
+    return f"{as_float_value(value):,.0f}".replace(",", " ") + " ₽"
 
 
 def number(value: float | str) -> str:
-    raw = float(value)
+    raw = as_float_value(value)
     if raw.is_integer():
         return f"{int(raw):,}".replace(",", " ")
     return f"{raw:,.1f}".replace(",", " ")
 
 
 def percent(value: float | str) -> str:
-    return f"{float(value) * 100:.1f}%"
+    return f"{as_float_value(value) * 100:.1f}%"
 
 
 def esc(value: object) -> str:
@@ -42,6 +44,13 @@ def status_label(status: str) -> str:
         "warning": "внимание",
     }
     return labels.get(status, status)
+
+
+def as_float_value(value: object) -> float:
+    try:
+        return float(str(value or "0").replace(" ", "").replace("\u00a0", ""))
+    except ValueError:
+        return 0.0
 
 
 def status_class(status: str) -> str:
@@ -93,10 +102,10 @@ def bar_chart(
     if not chart_rows:
         return '<p class="empty">Нет данных</p>'
 
-    max_value = max(float(row[value_key]) for row in chart_rows) or 1.0
+    max_value = max(as_float(row, value_key) for row in chart_rows) or 1.0
     items = []
     for row in chart_rows:
-        value = float(row[value_key])
+        value = as_float(row, value_key)
         width = max(value / max_value * 100, 1.5)
         items.append(
             f"""

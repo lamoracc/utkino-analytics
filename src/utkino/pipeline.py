@@ -394,10 +394,10 @@ def build_audit_report(
 
 
 def write_csv(rows: list[dict], path: Path) -> None:
-    if not rows:
-        return
-
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        if not rows:
+            handle.write("")
+            return
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
@@ -415,6 +415,11 @@ def run_profile(input_file: Path, output_dir: Path) -> dict:
     export_excel_to_csv(input_file=input_file, csv_dir=csv_dir)
     guests = parse_main_sheet(csv_dir)
     categories = parse_category_sheet(csv_dir)
+    if not guests:
+        raise RuntimeError(
+            "Не удалось найти строки гостей в Excel. Проверьте, что в отчете есть "
+            "основной лист с ФИО, городом, заездами, ночами и финансовыми колонками."
+        )
     summary = build_summary(guests)
 
     clean_path = output_dir / "clean_guests.csv"
