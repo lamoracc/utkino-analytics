@@ -21,6 +21,14 @@ SERVICE_COLUMNS = {
     "pets_spend": 18,
 }
 
+SEGMENT_RULES = [
+    ("club_1_vip", "CLUB 1 VIP", "от 4 млн"),
+    ("club_1_discount", "CLUB 1 discount", "действующей программе"),
+    ("club_2", "CLUB 2", "CLUB 2"),
+    ("club_3", "CLUB 3", "CLUB 3"),
+    ("non_club", "Non-CLUB", "не попавшие"),
+]
+
 
 @dataclass
 class GuestRow:
@@ -28,13 +36,22 @@ class GuestRow:
     guest_name: str
     city: str
     city_normalized: str
-    segment: str
+    segment_raw: str
+    segment_code: str
+    segment_label: str
     arrivals: int
+    arrival_group: str
+    is_repeat_guest: bool
     months_text: str
     room_categories_text: str
+    has_room_category: bool
     nights: float
     room_revenue: float
     total_revenue: float
+    extra_revenue: float
+    revenue_per_night: float
+    revenue_per_arrival: float
+    room_revenue_share: float
     load_share_text: str
     booking_room_sum: float
     restaurant_spend: float
@@ -80,6 +97,22 @@ def normalize_city(value: str) -> str:
     return aliases.get(city, city.title())
 
 
+def normalize_segment(value: str) -> tuple[str, str]:
+    segment = value or ""
+    for code, label, marker in SEGMENT_RULES:
+        if marker.lower() in segment.lower():
+            return code, label
+    return "unknown", "Unknown"
+
+
+def arrival_group(arrivals: int) -> str:
+    if arrivals <= 1:
+        return "1"
+    if arrivals == 2:
+        return "2"
+    return "3+"
+
+
 def looks_like_segment(row: list[str]) -> bool:
     first = row[0].strip() if row else ""
     second = row[1].strip() if len(row) > 1 else ""
@@ -117,6 +150,11 @@ def parse_main_sheet(csv_dir: Path) -> list[GuestRow]:
             field: parse_money(row[index])
             for field, index in SERVICE_COLUMNS.items()
         }
+        arrivals = parse_int(row[2])
+        nights = parse_money(row[5])
+        room_revenue = parse_money(row[6])
+        total_revenue = parse_money(row[7])
+        segment_code, segment_label = normalize_segment(current_segment)
 
         guests.append(
             GuestRow(
@@ -124,13 +162,22 @@ def parse_main_sheet(csv_dir: Path) -> list[GuestRow]:
                 guest_name=row[0].strip(),
                 city=row[1].strip(),
                 city_normalized=normalize_city(row[1]),
-                segment=current_segment,
-                arrivals=parse_int(row[2]),
+                segment_raw=current_segment,
+                segment_code=segment_code,
+                segment_label=segment_label,
+                arrivals=arrivals,
+                arrival_group=arrival_group(arrivals),
+                is_repeat_guest=arrivals > 1,
                 months_text=row[3].strip(),
                 room_categories_text=row[4].strip(),
-                nights=parse_money(row[5]),
-                room_revenue=parse_money(row[6]),
-                total_revenue=parse_money(row[7]),
+                has_room_category=bool(row[4].strip()),
+                nights=nights,
+                room_revenue=room_revenue,
+                total_revenue=total_revenue,
+                extra_revenue=total_revenue - room_revenue,
+                revenue_per_night=total_revenue / nights if nights else 0.0,
+                revenue_per_arrival=total_revenue / arrivals if arrivals else 0.0,
+                room_revenue_share=room_revenue / total_revenue if total_revenue else 0.0,
                 load_share_text=row[8].strip(),
                 **service_values,
             )
@@ -141,4 +188,3 @@ def parse_main_sheet(csv_dir: Path) -> list[GuestRow]:
 
 def guest_to_dict(guest: GuestRow) -> dict:
     return asdict(guest)
-

@@ -15,3 +15,13 @@ python .\run_profile.py
 
 Результаты появятся в `outputs/profile/`.
 
+Основные артефакты второго этапа:
+
+- `clean_guests.csv` - нормализованные строки гостей;
+- `summary.json` / `profile.json` - ключевые KPI и агрегаты;
+- `segments.csv` - агрегаты по CLUB-сегментам;
+- `cities.csv` - агрегаты по городам;
+- `repeat_guests.csv` - агрегаты по количеству заездов;
+- `service_spend.csv` - траты по дополнительным услугам;
+- `top_guests.csv` - топ гостей по доходу;
+- `data_quality.json` - проверки качества данных.
