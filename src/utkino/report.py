@@ -165,16 +165,19 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
   <title>Utkino Analytics 2025</title>
   <style>
     :root {{
-      --bg: #f6f7f9;
+      --bg: #f7f5ef;
       --surface: #ffffff;
-      --line: #d9dee7;
-      --text: #17202e;
-      --muted: #697386;
-      --accent: #0f766e;
-      --accent-2: #2563eb;
-      --warn: #b45309;
+      --surface-soft: #fbfaf6;
+      --line: #ddd5c2;
+      --text: #000000;
+      --muted: #665f52;
+      --accent: rgb(179, 161, 104);
+      --accent-2: #7f7045;
+      --header: #111111;
+      --warn: #a06f24;
+      --warn-bg: #fbf3df;
       --bad: #b91c1c;
-      --good: #047857;
+      --good: #496b4a;
     }}
     * {{ box-sizing: border-box; }}
     body {{
@@ -185,9 +188,10 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
       line-height: 1.45;
     }}
     header {{
-      background: #17202e;
+      background: var(--header);
       color: #fff;
       padding: 28px 32px 24px;
+      border-bottom: 4px solid var(--accent);
     }}
     header h1 {{
       margin: 0 0 8px;
@@ -195,7 +199,7 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
       font-weight: 650;
       letter-spacing: 0;
     }}
-    header p {{ margin: 0; color: #c9d2df; }}
+    header p {{ margin: 0; color: #d8cfad; }}
     main {{ padding: 24px 32px 40px; max-width: 1440px; margin: 0 auto; }}
     .tabs {{
       display: flex;
@@ -215,7 +219,8 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
     .tab-button.active {{
       background: var(--accent);
       border-color: var(--accent);
-      color: #fff;
+      color: #000;
+      font-weight: 650;
     }}
     .section {{ display: none; }}
     .section.active {{ display: block; }}
@@ -247,6 +252,7 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 16px;
+      border-top: 4px solid var(--accent);
     }}
     .kpi-label {{ color: var(--muted); font-size: 13px; }}
     .kpi-value {{ font-size: 24px; font-weight: 700; margin-top: 8px; }}
@@ -266,13 +272,13 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
     }}
     .bar-track {{
       height: 12px;
-      background: #e8edf4;
+      background: #eee8d7;
       border-radius: 999px;
       overflow: hidden;
     }}
     .bar-fill {{
       height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      background: linear-gradient(90deg, var(--accent-2), var(--accent));
     }}
     .bar-value {{ text-align: right; color: var(--muted); }}
     .table-wrap {{ overflow-x: auto; }}
@@ -283,13 +289,13 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
       text-align: left;
       vertical-align: top;
     }}
-    th {{ color: var(--muted); font-weight: 650; background: #f8fafc; }}
+    th {{ color: var(--muted); font-weight: 650; background: var(--surface-soft); }}
     .notice {{
       border-left: 4px solid var(--warn);
-      background: #fff7ed;
+      background: var(--warn-bg);
       padding: 12px 14px;
       border-radius: 6px;
-      color: #7c2d12;
+      color: #4f3712;
       margin-bottom: 16px;
     }}
     .status-pill {{
@@ -299,7 +305,7 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
       padding: 3px 8px;
       font-size: 12px;
       color: var(--muted);
-      background: #fff;
+      background: var(--surface-soft);
     }}
     .empty {{ color: var(--muted); }}
     .search {{
