@@ -121,12 +121,57 @@ def bar_chart(
     return "\n".join(items)
 
 
-def kpi_card(label: str, value: str, hint: str = "", modal_id: str = "") -> str:
+KPI_ICONS = {
+    "revenue": """
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="24"></circle>
+        <path d="M24 20h13a9 9 0 0 1 0 18H24"></path>
+        <path d="M24 20v30"></path>
+        <path d="M20 38h20"></path>
+      </svg>
+    """,
+    "guests": """
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="22" r="10"></circle>
+        <path d="M16 50c3-12 29-12 32 0"></path>
+      </svg>
+    """,
+    "nights": """
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M12 24v24"></path>
+        <path d="M52 32v16"></path>
+        <path d="M12 36h40"></path>
+        <path d="M20 28h14a8 8 0 0 1 8 8"></path>
+        <path d="M12 48h40"></path>
+      </svg>
+    """,
+    "repeat": """
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M46 20a20 20 0 0 0-31 8"></path>
+        <path d="M15 28H8v-7"></path>
+        <path d="M18 44a20 20 0 0 0 31-8"></path>
+        <path d="M49 36h7v7"></path>
+        <circle cx="32" cy="32" r="6"></circle>
+      </svg>
+    """,
+}
+
+
+def kpi_card(
+    label: str,
+    value: str,
+    hint: str = "",
+    modal_id: str = "",
+    icon: str = "",
+) -> str:
     modal_attr = f' data-modal-open="{esc(modal_id)}"' if modal_id else ""
     clickable_class = " clickable" if modal_id else ""
+    icon_class = " has-kpi-icon" if icon in KPI_ICONS else ""
+    icon_html = f'<div class="kpi-bg-icon">{KPI_ICONS[icon]}</div>' if icon in KPI_ICONS else ""
     action = '<div class="kpi-action">Подробнее</div>' if modal_id else ""
     return f"""
-    <div class="kpi{clickable_class}"{modal_attr}>
+    <div class="kpi{clickable_class}{icon_class}"{modal_attr}>
+      {icon_html}
       <div class="kpi-label">{esc(label)}</div>
       <div class="kpi-value">{esc(value)}</div>
       <div class="kpi-hint">{esc(hint)}</div>
@@ -565,9 +610,34 @@ def build_dashboard(
       border-radius: 8px;
       padding: 16px;
       border-top: 4px solid var(--accent);
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }}
+    .kpi > :not(.kpi-bg-icon) {{
+      position: relative;
+      z-index: 1;
+    }}
+    .kpi-bg-icon {{
+      position: absolute;
+      right: 14px;
+      bottom: 8px;
+      width: 78px;
+      height: 78px;
+      color: rgba(179, 161, 104, 0.18);
+      z-index: 0;
+      pointer-events: none;
+    }}
+    .kpi-bg-icon svg {{
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }}
     .kpi.clickable {{
-      position: relative;
       padding-right: 46px;
       background: linear-gradient(180deg, #ffffff 0%, #fffdf7 100%);
     }}
@@ -803,10 +873,10 @@ def build_dashboard(
 
     <section id="overview" class="section active">
       <div class="grid">
-        <div class="span-3">{kpi_card("Общий доход", money(summary["total_revenue"]), "Источник: аналитика 2025", "revenue-modal")}</div>
-        <div class="span-3">{kpi_card("Гостей", number(summary["guest_count"]), f"{number(summary['arrivals'])} заездов")}</div>
-        <div class="span-3">{kpi_card("Ночей", number(summary["nights"]), f"{money(summary['average_revenue_per_night'])} на ночь")}</div>
-        <div class="span-3">{kpi_card("Повторные гости", percent(summary["repeat_guest_share"]), f"{percent(summary['repeat_revenue_share'])} выручки", "repeat-modal")}</div>
+        <div class="span-3">{kpi_card("Общий доход", money(summary["total_revenue"]), "Источник: аналитика 2025", "revenue-modal", "revenue")}</div>
+        <div class="span-3">{kpi_card("Гостей", number(summary["guest_count"]), f"{number(summary['arrivals'])} заездов", icon="guests")}</div>
+        <div class="span-3">{kpi_card("Ночей", number(summary["nights"]), f"{money(summary['average_revenue_per_night'])} на ночь", icon="nights")}</div>
+        <div class="span-3">{kpi_card("Повторные гости", percent(summary["repeat_guest_share"]), f"{percent(summary['repeat_revenue_share'])} выручки", "repeat-modal", "repeat")}</div>
         <div class="panel span-6">
           <h2>Выручка по сегментам</h2>
           {bar_chart(segments, "segment_label", "total_revenue", money, 6)}
