@@ -131,9 +131,10 @@ def table(
 
 
 def modal(modal_id: str, title: str, body: str) -> str:
+    modal_class = "modal multi-table" if body.count('class="table-wrap"') > 1 else "modal"
     return f"""
     <div class="modal-backdrop" id="{esc(modal_id)}" aria-hidden="true">
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="{esc(modal_id)}-title">
+      <div class="{modal_class}" role="dialog" aria-modal="true" aria-labelledby="{esc(modal_id)}-title">
         <button class="modal-close" type="button" data-modal-close aria-label="Закрыть">×</button>
         <h2 id="{esc(modal_id)}-title">{esc(title)}</h2>
         {body}
@@ -409,6 +410,9 @@ def build_dashboard(
       font-family: "Segoe UI", Arial, sans-serif;
       line-height: 1.45;
     }}
+    body.modal-open {{
+      overflow: hidden;
+    }}
     header {{
       background: var(--header);
       color: #fff;
@@ -572,12 +576,28 @@ def build_dashboard(
     .modal {{
       width: min(960px, 100%);
       max-height: min(760px, 90vh);
-      overflow: auto;
+      overflow: hidden;
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 22px;
       position: relative;
+      display: flex;
+      flex-direction: column;
+    }}
+    .modal .table-wrap {{
+      max-height: min(520px, 62vh);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }}
+    .modal.multi-table .table-wrap {{
+      max-height: min(180px, 22vh);
+    }}
+    .modal thead th {{
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }}
     .modal h2 {{ margin: 0 42px 18px 0; font-size: 21px; }}
     .modal h3 {{ margin: 18px 0 10px; font-size: 15px; }}
@@ -600,6 +620,10 @@ def build_dashboard(
       .span-3, .span-4, .span-6, .span-8 {{ grid-column: span 12; }}
       .bar-row {{ grid-template-columns: 1fr; gap: 5px; }}
       .bar-value {{ text-align: left; }}
+      .modal-backdrop {{ padding: 12px; }}
+      .modal {{ max-height: 92vh; padding: 18px; }}
+      .modal .table-wrap {{ max-height: 60vh; }}
+      .modal.multi-table .table-wrap {{ max-height: 18vh; }}
     }}
   </style>
 </head>
@@ -797,16 +821,23 @@ def build_dashboard(
 
     const modalButtons = document.querySelectorAll("[data-modal-open]");
     const closeButtons = document.querySelectorAll("[data-modal-close]");
+    const updateModalLock = () => {{
+      const hasOpenModal = document.querySelector(".modal-backdrop.open");
+      document.body.classList.toggle("modal-open", Boolean(hasOpenModal));
+    }};
     const openModal = (id) => {{
       if (!id) return;
       const modal = document.getElementById(id);
       if (!modal) return;
       modal.classList.add("open");
       modal.setAttribute("aria-hidden", "false");
+      updateModalLock();
     }};
     const closeModal = (modal) => {{
+      if (!modal) return;
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
+      updateModalLock();
     }};
     modalButtons.forEach((button) => {{
       button.addEventListener("click", () => openModal(button.dataset.modalOpen));
