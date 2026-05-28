@@ -1,0 +1,13 @@
+# Input data and generated reports can contain guest data.
+Data/
+outputs/
+
+# Python cache files.
+__pycache__/
+*.py[cod]
+
+# Local environment files.
+.venv/
+venv/
+*.log
+
