@@ -123,35 +123,32 @@ def bar_chart(
 
 KPI_ICONS = {
     "revenue": """
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="32" r="24"></circle>
-        <path d="M24 20h13a9 9 0 0 1 0 18H24"></path>
-        <path d="M24 20v30"></path>
-        <path d="M20 38h20"></path>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+        <path d="M12 18V6"></path>
       </svg>
     """,
     "guests": """
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="22" r="10"></circle>
-        <path d="M16 50c3-12 29-12 32 0"></path>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="5"></circle>
+        <path d="M20 21a8 8 0 0 0-16 0"></path>
       </svg>
     """,
     "nights": """
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M12 24v24"></path>
-        <path d="M52 32v16"></path>
-        <path d="M12 36h40"></path>
-        <path d="M20 28h14a8 8 0 0 1 8 8"></path>
-        <path d="M12 48h40"></path>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"></path>
+        <path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"></path>
+        <path d="M12 4v6"></path>
+        <path d="M2 18h20"></path>
       </svg>
     """,
     "repeat": """
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M46 20a20 20 0 0 0-31 8"></path>
-        <path d="M15 28H8v-7"></path>
-        <path d="M18 44a20 20 0 0 0 31-8"></path>
-        <path d="M49 36h7v7"></path>
-        <circle cx="32" cy="32" r="6"></circle>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m2 9 3-3 3 3"></path>
+        <path d="M13 18H7a2 2 0 0 1-2-2V6"></path>
+        <path d="m22 15-3 3-3-3"></path>
+        <path d="M11 6h6a2 2 0 0 1 2 2v10"></path>
       </svg>
     """,
 }
@@ -633,7 +630,7 @@ def build_dashboard(
       height: 100%;
       fill: none;
       stroke: currentColor;
-      stroke-width: 5;
+      stroke-width: 1.8;
       stroke-linecap: round;
       stroke-linejoin: round;
     }}
