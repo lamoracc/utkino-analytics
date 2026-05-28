@@ -142,7 +142,12 @@ def modal(modal_id: str, title: str, body: str) -> str:
     """
 
 
-def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
+def build_dashboard(
+    profile_dir: Path,
+    output_file: Path,
+    metadata: dict | None = None,
+) -> Path:
+    metadata = metadata or {}
     summary = read_json(profile_dir / "summary.json")
     data_quality = read_json(profile_dir / "data_quality.json")
     audit = read_json(profile_dir / "audit_report.json")
@@ -197,6 +202,16 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
         }
         for row in repeat
     ]
+    metadata_rows = [
+        ("Файл", metadata.get("input_file_name", "Data/Utkino.xls")),
+        ("Сформировано", metadata.get("generated_at", "")),
+        ("Excel изменен", metadata.get("input_file_modified_at", "")),
+    ]
+    metadata_html = "".join(
+        f"<span><strong>{esc(label)}:</strong> {esc(value)}</span>"
+        for label, value in metadata_rows
+        if value
+    )
     top_revenue_guests = sorted(
         clean_guests,
         key=lambda row: as_float(row, "total_revenue"),
@@ -407,6 +422,15 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
       letter-spacing: 0;
     }}
     header p {{ margin: 0; color: #d8cfad; }}
+    .meta-line {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 14px;
+      color: #e8dfbd;
+      font-size: 12px;
+    }}
+    .meta-line strong {{ color: #fff; }}
     main {{ padding: 24px 32px 40px; max-width: 1440px; margin: 0 auto; }}
     .tabs {{
       display: flex;
@@ -583,6 +607,7 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
   <header>
     <h1>Utkino Analytics 2025</h1>
     <p>Аналитический отчет по гостям, выручке, сегментам и качеству данных</p>
+    <div class="meta-line">{metadata_html}</div>
   </header>
   <main>
     <nav class="tabs" aria-label="Разделы отчета">

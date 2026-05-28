@@ -21,7 +21,19 @@ python .\run_profile.py
 python .\run_dashboard.py
 ```
 
-HTML-отчет появится в `outputs/report.html`.
+HTML-отчет появится в отдельной папке `reports/<дата_и_время>/report.html`.
+
+Для запуска простого интерфейса выбора Excel:
+
+```powershell
+python .\run_app.py
+```
+
+В интерфейсе:
+
+1. выберите Excel-файл;
+2. нажмите `Сформировать отчет`;
+3. нажмите `Открыть отчет`.
 
 В HTML-отчете есть интерактивные модальные окна:
 

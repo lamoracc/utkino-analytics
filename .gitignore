@@ -1,6 +1,7 @@
 # Input data and generated reports can contain guest data.
 Data/
 outputs/
+reports/
 
 # Python cache files.
 __pycache__/
@@ -10,4 +11,3 @@ __pycache__/
 .venv/
 venv/
 *.log
-
