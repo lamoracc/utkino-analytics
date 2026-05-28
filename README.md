@@ -23,6 +23,18 @@ python .\run_dashboard.py
 
 HTML-отчет появится в `outputs/report.html`.
 
+Перед визуальной версией 2 создана точка отката:
+
+```powershell
+git switch main
+```
+
+или, если нужно принудительно вернуться к состоянию до новых графиков:
+
+```powershell
+git reset --hard before-visual-v2
+```
+
 Основные артефакты второго этапа:
 
 - `clean_guests.csv` - нормализованные строки гостей;
