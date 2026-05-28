@@ -621,7 +621,7 @@ def build_dashboard(
       bottom: 8px;
       width: 78px;
       height: 78px;
-      color: rgba(179, 161, 104, 0.18);
+      color: #ded6bf;
       z-index: 0;
       pointer-events: none;
     }}
