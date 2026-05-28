@@ -362,6 +362,39 @@ def build_dashboard(
         ],
         no_show_table_rows,
     )
+    reconciliation_mismatch_rows = [
+        {
+            "ordinal": row.get("ordinal", ""),
+            "main_source_row": row.get("main_source_row", ""),
+            "category_source_row": row.get("category_source_row", ""),
+            "city_main": row.get("city_main", ""),
+            "city_category": row.get("city_category", ""),
+            "arrivals_diff": number(row.get("arrivals_diff", 0)),
+            "nights_diff": number(row.get("nights_diff", 0)),
+            "room_revenue_diff": money(row.get("room_revenue_diff", 0)),
+            "total_revenue_diff": money(row.get("total_revenue_diff", 0)),
+        }
+        for row in reconciliation.get("row_level_mismatches", [])
+    ]
+    reconciliation_modal_body = (
+        '<p class="modal-note">Показаны различия между основным листом и листом '
+        'категорий. Основной лист остается источником финансовых показателей.</p>'
+        + table(
+            [
+                ("ordinal", "#"),
+                ("main_source_row", "Строка основного листа"),
+                ("category_source_row", "Строка категорий"),
+                ("city_main", "Город в основном"),
+                ("city_category", "Город в категориях"),
+                ("arrivals_diff", "Разница заездов"),
+                ("nights_diff", "Разница ночей"),
+                ("room_revenue_diff", "Разница комнат"),
+                ("total_revenue_diff", "Разница дохода"),
+            ],
+            reconciliation_mismatch_rows,
+            table_class="sortable-table",
+        )
+    )
 
     city_modal_html = []
     city_modal_ids = {}
@@ -720,6 +753,11 @@ def build_dashboard(
     }}
     .modal h2 {{ margin: 0 42px 18px 0; font-size: 21px; }}
     .modal h3 {{ margin: 18px 0 10px; font-size: 15px; }}
+    .modal-note {{
+      color: var(--muted);
+      margin: 0 42px 14px 0;
+      font-size: 13px;
+    }}
     .modal-close {{
       position: absolute;
       top: 12px;
@@ -906,7 +944,12 @@ def build_dashboard(
         <div class="panel span-6">
           <h2>Межлистовая сверка</h2>
           <div class="audit-card {esc("status-bad" if reconciliation["row_level_mismatch_count"] else "status-good")}">
-            {kpi_card("Расхождений", number(reconciliation["row_level_mismatch_count"]), "Основной лист остается источником финансов")}
+            {kpi_card(
+                "Расхождений",
+                number(reconciliation["row_level_mismatch_count"]),
+                "Нажмите, чтобы посмотреть детали" if reconciliation["row_level_mismatch_count"] else "Основной лист остается источником финансов",
+                "reconciliation-modal" if reconciliation["row_level_mismatch_count"] else "",
+            )}
           </div>
           <p>Сумма основного листа: <strong>{money(reconciliation["main_total_revenue"])}</strong></p>
           <p>Сумма листа категорий: <strong>{money(reconciliation["category_total_revenue"])}</strong></p>
@@ -917,6 +960,7 @@ def build_dashboard(
   {modal("revenue-modal", "Общий доход: основные источники", revenue_modal_body)}
   {modal("repeat-modal", "Повторные гости", repeat_modal_body)}
   {modal("no-show-modal", "No-show бронирования", no_show_modal_body)}
+  {modal("reconciliation-modal", "Межлистовая сверка: расхождения", reconciliation_modal_body)}
   {''.join(city_modal_html)}
   {''.join(top_guest_modal_html)}
   <script>
