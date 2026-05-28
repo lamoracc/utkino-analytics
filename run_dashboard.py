@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 from src.utkino.pipeline import run_profile
@@ -16,13 +15,12 @@ if __name__ == "__main__":
             output_dir=profile_dir,
         )
     except PermissionError as error:
-        summary_path = profile_dir / "summary.json"
-        if not summary_path.exists():
-            raise
-        profile = {
-            "summary": json.loads(summary_path.read_text(encoding="utf-8")),
-        }
-        print(f"Profile files are locked, using existing profile: {error}")
+        raise SystemExit(
+            "Не удалось обновить данные отчета: один из файлов в outputs/profile "
+            "заблокирован. Закройте Excel, браузерную загрузку, проводник с предпросмотром "
+            "или синхронизацию, которая держит CSV/JSON, и запустите команду снова. "
+            f"Техническая деталь: {error}"
+        ) from error
 
     output_path = build_dashboard(
         profile_dir=profile_dir,
