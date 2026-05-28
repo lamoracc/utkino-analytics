@@ -125,8 +125,10 @@ KPI_ICONS = {
     "revenue": """
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="10"></circle>
-        <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
-        <path d="M12 18V6"></path>
+        <path d="M9 6h5a4 4 0 0 1 0 8H9"></path>
+        <path d="M9 6v12"></path>
+        <path d="M7 14h8"></path>
+        <path d="M7 17h8"></path>
       </svg>
     """,
     "guests": """
