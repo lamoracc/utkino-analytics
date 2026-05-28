@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 MAIN_SHEET = "аналитика 2025.csv"
+CATEGORY_SHEET = "категории номеров.csv"
 
 SERVICE_COLUMNS = {
     "booking_room_sum": 9,
@@ -63,6 +64,22 @@ class GuestRow:
     cap_spend: float
     transfer_spend: float
     pets_spend: float
+
+
+@dataclass
+class CategoryRow:
+    ordinal: int
+    source_row: int
+    city: str
+    arrivals: int
+    nights: float
+    room_revenue: float
+    total_revenue: float
+    load_share_text: str
+    room_category_detail_1: str
+    room_category_detail_2: str
+    guest_comment: str
+    booking_method: str
 
 
 def parse_money(value: str) -> float:
@@ -186,5 +203,45 @@ def parse_main_sheet(csv_dir: Path) -> list[GuestRow]:
     return guests
 
 
+def parse_category_sheet(csv_dir: Path) -> list[CategoryRow]:
+    path = csv_dir / CATEGORY_SHEET
+    with path.open(encoding="cp1251", newline="") as handle:
+        rows = list(csv.reader(handle))
+
+    category_rows: list[CategoryRow] = []
+
+    for source_row, row in enumerate(rows, start=1):
+        row = row + [""] * (11 - len(row))
+
+        if len(row) < 6 or row[0].strip() == "ФИО гостя":
+            continue
+
+        if not row[2].strip() or not row[5].strip():
+            continue
+
+        category_rows.append(
+            CategoryRow(
+                ordinal=len(category_rows) + 1,
+                source_row=source_row,
+                city=row[1].strip(),
+                arrivals=parse_int(row[2]),
+                nights=parse_money(row[3]),
+                room_revenue=parse_money(row[4]),
+                total_revenue=parse_money(row[5]),
+                load_share_text=row[6].strip(),
+                room_category_detail_1=row[7].strip(),
+                room_category_detail_2=row[8].strip(),
+                guest_comment=row[9].strip(),
+                booking_method=row[10].strip(),
+            )
+        )
+
+    return category_rows
+
+
 def guest_to_dict(guest: GuestRow) -> dict:
     return asdict(guest)
+
+
+def category_to_dict(category: CategoryRow) -> dict:
+    return asdict(category)

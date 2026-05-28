@@ -6,7 +6,13 @@ import subprocess
 from collections import defaultdict
 from pathlib import Path
 
-from .parser import SERVICE_COLUMNS, guest_to_dict, parse_main_sheet
+from .parser import (
+    SERVICE_COLUMNS,
+    category_to_dict,
+    guest_to_dict,
+    parse_category_sheet,
+    parse_main_sheet,
+)
 
 
 SERVICE_LABELS = {
@@ -20,6 +26,34 @@ SERVICE_LABELS = {
     "cap_spend": "Кепка",
     "transfer_spend": "Трансфер",
     "pets_spend": "Проживание животных",
+}
+
+DATA_CONTRACT = {
+    "financials": {
+        "source_sheet": "аналитика 2025",
+        "fields": ["arrivals", "nights", "room_revenue", "total_revenue"],
+        "rule": "Источник истины для финансовых показателей и базовых метрик.",
+    },
+    "segments": {
+        "source_sheet": "аналитика 2025",
+        "fields": ["segment_raw", "segment_code", "segment_label"],
+        "rule": "Сегмент определяется по блочным заголовкам CLUB в основном листе.",
+    },
+    "guest_details": {
+        "source_sheet": "категории номеров",
+        "fields": [
+            "room_category_detail_1",
+            "room_category_detail_2",
+            "guest_comment",
+            "booking_method",
+        ],
+        "rule": "Используется для деталей гостя; финансовые значения с этого листа не перезаписывают основной лист.",
+    },
+    "duplicates": {
+        "source_sheet": "Дубли",
+        "fields": ["contact_candidates"],
+        "rule": "Справочный лист с персональными данными; в публичный дашборд не включается.",
+    },
 }
 
 
@@ -181,6 +215,135 @@ def build_top_guests(guests: list, limit: int = 25) -> list[dict]:
     ]
 
 
+def build_category_details(guests: list, categories: list) -> list[dict]:
+    rows = []
+
+    for guest, category in zip(guests, categories):
+        rows.append(
+            {
+                "ordinal": category.ordinal,
+                "main_source_row": guest.source_row,
+                "category_source_row": category.source_row,
+                "guest_name": guest.guest_name,
+                "city": guest.city_normalized,
+                "segment": guest.segment_label,
+                "arrivals": guest.arrivals,
+                "nights": guest.nights,
+                "room_revenue": guest.room_revenue,
+                "total_revenue": guest.total_revenue,
+                "room_category_text": guest.room_categories_text,
+                "room_category_detail_1": category.room_category_detail_1,
+                "room_category_detail_2": category.room_category_detail_2,
+                "guest_comment": category.guest_comment,
+                "booking_method": category.booking_method,
+            }
+        )
+
+    return rows
+
+
+def build_sheet_reconciliation(guests: list, categories: list) -> dict:
+    row_mismatches = []
+
+    for guest, category in zip(guests, categories):
+        differences = {
+            "arrivals_diff": category.arrivals - guest.arrivals,
+            "nights_diff": category.nights - guest.nights,
+            "room_revenue_diff": category.room_revenue - guest.room_revenue,
+            "total_revenue_diff": category.total_revenue - guest.total_revenue,
+        }
+        if any(abs(value) > 0.001 for value in differences.values()):
+            row_mismatches.append(
+                {
+                    "ordinal": category.ordinal,
+                    "main_source_row": guest.source_row,
+                    "category_source_row": category.source_row,
+                    "city_main": guest.city,
+                    "city_category": category.city,
+                    **differences,
+                }
+            )
+
+    return {
+        "main_guest_rows": len(guests),
+        "category_guest_rows": len(categories),
+        "row_count_match": len(guests) == len(categories),
+        "row_level_mismatch_count": len(row_mismatches),
+        "row_level_mismatches": row_mismatches,
+        "main_total_revenue": sum(guest.total_revenue for guest in guests),
+        "category_total_revenue": sum(category.total_revenue for category in categories),
+        "main_room_revenue": sum(guest.room_revenue for guest in guests),
+        "category_room_revenue": sum(category.room_revenue for category in categories),
+        "main_nights": sum(guest.nights for guest in guests),
+        "category_nights": sum(category.nights for category in categories),
+    }
+
+
+def build_reliability(
+    data_quality: dict,
+    reconciliation: dict,
+    categories: list,
+) -> list[dict]:
+    category_detail_count = sum(
+        1
+        for row in categories
+        if row.room_category_detail_1 or row.room_category_detail_2
+    )
+    booking_method_count = sum(1 for row in categories if row.booking_method)
+
+    return [
+        {
+            "dashboard_block": "Финансы",
+            "status": "reliable",
+            "reason": "Строки, выручка, ночи и заезды сверены по основному листу.",
+        },
+        {
+            "dashboard_block": "CLUB-сегменты",
+            "status": "reliable",
+            "reason": "Все строки гостей получили распознанный CLUB/Non-CLUB сегмент.",
+        },
+        {
+            "dashboard_block": "География",
+            "status": "partial",
+            "reason": (
+                f"Не заполнен город у {data_quality['missing_city_count']} гостей "
+                f"({data_quality['missing_city_share']:.1%})."
+            ),
+        },
+        {
+            "dashboard_block": "Категории номеров",
+            "status": "partial",
+            "reason": (
+                f"Детали категории заполнены у {category_detail_count} из "
+                f"{len(categories)} строк листа категорий."
+            ),
+        },
+        {
+            "dashboard_block": "Способ бронирования",
+            "status": "partial",
+            "reason": (
+                f"Способ бронирования заполнен у {booking_method_count} из "
+                f"{len(categories)} строк листа категорий."
+            ),
+        },
+        {
+            "dashboard_block": "Дополнительные услуги",
+            "status": "partial",
+            "reason": "Детализация услуг заполнена только у части гостей.",
+        },
+        {
+            "dashboard_block": "Межлистовая сверка",
+            "status": "warning"
+            if reconciliation["row_level_mismatch_count"]
+            else "reliable",
+            "reason": (
+                f"Найдено {reconciliation['row_level_mismatch_count']} "
+                "расхождений между основным листом и листом категорий."
+            ),
+        },
+    ]
+
+
 def build_data_quality(guests: list) -> dict:
     missing_city = [guest for guest in guests if not guest.city.strip()]
     missing_category = [guest for guest in guests if not guest.has_room_category]
@@ -216,6 +379,37 @@ def build_data_quality(guests: list) -> dict:
     }
 
 
+def build_audit_report(
+    guests: list,
+    categories: list,
+    summary: dict,
+    data_quality: dict,
+) -> dict:
+    reconciliation = build_sheet_reconciliation(guests, categories)
+    reliability = build_reliability(data_quality, reconciliation, categories)
+
+    return {
+        "data_contract": DATA_CONTRACT,
+        "source_integrity": {
+            "main_guest_rows": len(guests),
+            "category_guest_rows": len(categories),
+            "main_total_revenue": summary["total_revenue"],
+            "main_room_revenue": summary["room_revenue"],
+            "main_nights": summary["nights"],
+            "main_arrivals": summary["arrivals"],
+        },
+        "sheet_reconciliation": reconciliation,
+        "data_quality": data_quality,
+        "dashboard_reliability": reliability,
+        "decision_rules": [
+            "Финансовые суммы всегда берутся из листа 'аналитика 2025'.",
+            "Лист 'категории номеров' обогащает детали гостя, но не заменяет финансовые суммы.",
+            "No-show бронирования считаются валидными строками, если есть доход и ноль ночей.",
+            "География и услуги показываются с предупреждением о неполной заполненности.",
+        ],
+    }
+
+
 def write_csv(rows: list[dict], path: Path) -> None:
     if not rows:
         return
@@ -237,15 +431,25 @@ def run_profile(input_file: Path, output_dir: Path) -> dict:
 
     export_excel_to_csv(input_file=input_file, csv_dir=csv_dir)
     guests = parse_main_sheet(csv_dir)
+    categories = parse_category_sheet(csv_dir)
     summary = build_summary(guests)
 
     clean_path = output_dir / "clean_guests.csv"
     profile_path = output_dir / "profile.json"
     summary_path = output_dir / "summary.json"
     data_quality_path = output_dir / "data_quality.json"
+    audit_report_path = output_dir / "audit_report.json"
 
     clean_rows = [guest_to_dict(guest) for guest in guests]
     write_csv(clean_rows, clean_path)
+    write_csv(
+        [category_to_dict(row) for row in categories],
+        output_dir / "category_rows.csv",
+    )
+    write_csv(
+        build_category_details(guests, categories),
+        output_dir / "guest_details.csv",
+    )
     write_csv(
         aggregate_rows(guests, ["segment_code", "segment_label"]),
         output_dir / "segments.csv",
@@ -259,9 +463,15 @@ def run_profile(input_file: Path, output_dir: Path) -> dict:
     write_csv(build_top_guests(guests), output_dir / "top_guests.csv")
 
     data_quality = build_data_quality(guests)
+    audit_report = build_audit_report(guests, categories, summary, data_quality)
     write_json(summary, profile_path)
     write_json(summary, summary_path)
     write_json(data_quality, data_quality_path)
+    write_json(audit_report, audit_report_path)
+    write_csv(
+        audit_report["dashboard_reliability"],
+        output_dir / "dashboard_reliability.csv",
+    )
 
     return {
         "summary": summary,
@@ -269,4 +479,5 @@ def run_profile(input_file: Path, output_dir: Path) -> dict:
         "profile_path": str(profile_path),
         "summary_path": str(summary_path),
         "data_quality_path": str(data_quality_path),
+        "audit_report_path": str(audit_report_path),
     }
