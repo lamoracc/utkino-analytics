@@ -211,7 +211,7 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
         [
             row
             for row in clean_guests
-            if as_float(row, "nights") == 0 and as_float(row, "total_revenue") > 0
+            if as_int(row, "arrivals") == 0 and as_float(row, "nights") > 0
         ],
         key=lambda row: as_float(row, "total_revenue"),
         reverse=True,
@@ -222,6 +222,7 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
             "city": row.get("city_normalized", ""),
             "segment": row.get("segment_label", ""),
             "arrivals": row.get("arrivals", ""),
+            "nights": number(row.get("nights", 0)),
             "total_revenue": money(row.get("total_revenue", 0)),
         }
         for index, row in enumerate(no_show_guests[:25], start=1)
@@ -296,6 +297,7 @@ def build_dashboard(profile_dir: Path, output_file: Path) -> Path:
             ("city", "Город"),
             ("segment", "Сегмент"),
             ("arrivals", "Заездов"),
+            ("nights", "Забронировано ночей"),
             ("total_revenue", "Доход"),
         ],
         no_show_table_rows,
