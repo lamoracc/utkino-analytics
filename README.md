@@ -15,6 +15,14 @@ python .\run_profile.py
 
 Результаты появятся в `outputs/profile/`.
 
+Для генерации первого HTML-дашборда:
+
+```powershell
+python .\run_dashboard.py
+```
+
+HTML-отчет появится в `outputs/report.html`.
+
 Основные артефакты второго этапа:
 
 - `clean_guests.csv` - нормализованные строки гостей;

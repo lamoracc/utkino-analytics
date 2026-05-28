@@ -1,0 +1,21 @@
+from pathlib import Path
+
+from src.utkino.pipeline import run_profile
+from src.utkino.report import build_dashboard
+
+
+ROOT = Path(__file__).resolve().parent
+
+
+if __name__ == "__main__":
+    profile = run_profile(
+        input_file=ROOT / "Data" / "Utkino.xls",
+        output_dir=ROOT / "outputs" / "profile",
+    )
+    output_path = build_dashboard(
+        profile_dir=ROOT / "outputs" / "profile",
+        output_file=ROOT / "outputs" / "report.html",
+    )
+    print(f"Guests parsed: {profile['summary']['guest_count']}")
+    print(f"Total revenue: {profile['summary']['total_revenue']:,.2f}")
+    print(f"Dashboard saved: {output_path}")
