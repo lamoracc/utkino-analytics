@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import html
 import json
+from datetime import datetime
 from pathlib import Path
 
 
@@ -41,6 +42,25 @@ def status_label(status: str) -> str:
         "warning": "внимание",
     }
     return labels.get(status, status)
+
+
+def status_class(status: str) -> str:
+    classes = {
+        "reliable": "status-good",
+        "partial": "status-warning",
+        "warning": "status-bad",
+    }
+    return classes.get(status, "status-neutral")
+
+
+def format_report_datetime(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return value
+    return parsed.strftime("%d.%m.%Y %H:%M:%S")
 
 
 def as_float(row: dict, key: str) -> float:
@@ -95,11 +115,13 @@ def bar_chart(
 def kpi_card(label: str, value: str, hint: str = "", modal_id: str = "") -> str:
     modal_attr = f' data-modal-open="{esc(modal_id)}"' if modal_id else ""
     clickable_class = " clickable" if modal_id else ""
+    action = '<div class="kpi-action">Подробнее</div>' if modal_id else ""
     return f"""
     <div class="kpi{clickable_class}"{modal_attr}>
       <div class="kpi-label">{esc(label)}</div>
       <div class="kpi-value">{esc(value)}</div>
       <div class="kpi-hint">{esc(hint)}</div>
+      {action}
     </div>
     """
 
@@ -109,9 +131,11 @@ def table(
     rows: list[dict],
     limit: int | None = None,
     row_attrs=None,
+    table_class: str = "",
 ) -> str:
     selected_rows = rows if limit is None else rows[:limit]
-    head = "".join(f"<th>{esc(title)}</th>" for _, title in headers)
+    class_attr = f' class="{esc(table_class)}"' if table_class else ""
+    head = "".join(f'<th data-sort-key="{esc(key)}">{esc(title)}</th>' for key, title in headers)
     body_rows = []
     for index, row in enumerate(selected_rows):
         attrs = f" {row_attrs(row, index)}" if row_attrs else ""
@@ -122,7 +146,7 @@ def table(
     )
     return f"""
     <div class="table-wrap">
-      <table>
+      <table{class_attr}>
         <thead><tr>{head}</tr></thead>
         <tbody>{body}</tbody>
       </table>
@@ -131,7 +155,7 @@ def table(
 
 
 def modal(modal_id: str, title: str, body: str) -> str:
-    modal_class = "modal multi-table" if body.count('class="table-wrap"') > 1 else "modal"
+    modal_class = "modal modal-scroll" if modal_id == "revenue-modal" else "modal"
     return f"""
     <div class="modal-backdrop" id="{esc(modal_id)}" aria-hidden="true">
       <div class="{modal_class}" role="dialog" aria-modal="true" aria-labelledby="{esc(modal_id)}-title">
@@ -174,8 +198,16 @@ def build_dashboard(
         row["revenue_per_night"] = money(row["revenue_per_night"])
         row["nights"] = number(row["nights"])
 
+    reliability_rows = []
     for row in reliability:
-        row["status"] = status_label(row["status"])
+        status = row.get("status", "")
+        reliability_rows.append(
+            {
+                **row,
+                "status": status_label(status),
+                "status_code": status,
+            }
+        )
 
     reconciliation = audit["sheet_reconciliation"]
     segment_table_rows = [
@@ -205,8 +237,11 @@ def build_dashboard(
     ]
     metadata_rows = [
         ("Файл", metadata.get("input_file_name", "Data/Utkino.xls")),
-        ("Сформировано", metadata.get("generated_at", "")),
-        ("Excel изменен", metadata.get("input_file_modified_at", "")),
+        ("Сформировано", format_report_datetime(metadata.get("generated_at", ""))),
+        (
+            "Excel изменен",
+            format_report_datetime(metadata.get("input_file_modified_at", "")),
+        ),
     ]
     metadata_html = "".join(
         f"<span><strong>{esc(label)}:</strong> {esc(value)}</span>"
@@ -489,6 +524,26 @@ def build_dashboard(
       padding: 16px;
       border-top: 4px solid var(--accent);
     }}
+    .kpi.clickable {{
+      position: relative;
+      padding-right: 46px;
+      background: linear-gradient(180deg, #ffffff 0%, #fffdf7 100%);
+    }}
+    .kpi.clickable::after {{
+      content: "↗";
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 24px;
+      height: 24px;
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--accent-2);
+      font-weight: 700;
+      font-size: 13px;
+    }}
     .clickable {{
       cursor: pointer;
       transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
@@ -501,6 +556,12 @@ def build_dashboard(
     .kpi-label {{ color: var(--muted); font-size: 13px; }}
     .kpi-value {{ font-size: 24px; font-weight: 700; margin-top: 8px; }}
     .kpi-hint {{ color: var(--muted); font-size: 12px; margin-top: 8px; }}
+    .kpi-action {{
+      margin-top: 12px;
+      color: var(--accent-2);
+      font-size: 12px;
+      font-weight: 650;
+    }}
     .bar-row {{
       display: grid;
       grid-template-columns: minmax(140px, 230px) 1fr minmax(90px, 140px);
@@ -534,7 +595,48 @@ def build_dashboard(
       vertical-align: top;
     }}
     th {{ color: var(--muted); font-weight: 650; background: var(--surface-soft); }}
+    .sortable-table th {{
+      cursor: pointer;
+      user-select: none;
+    }}
+    .sortable-table th::after {{
+      content: "↕";
+      margin-left: 6px;
+      color: var(--accent-2);
+      font-size: 11px;
+    }}
+    .sortable-table th.sorted-asc::after {{ content: "↑"; }}
+    .sortable-table th.sorted-desc::after {{ content: "↓"; }}
     tr.clickable:hover td {{ background: var(--surface-soft); }}
+    .audit-row.status-good td:first-child {{
+      border-left: 4px solid var(--good);
+    }}
+    .audit-row.status-warning td:first-child {{
+      border-left: 4px solid var(--warn);
+      background: #fff8e8;
+    }}
+    .audit-row.status-bad td:first-child {{
+      border-left: 4px solid var(--bad);
+      background: #fff0f0;
+    }}
+    .audit-row.status-warning td:nth-child(2),
+    .audit-row.status-warning td:nth-child(3) {{
+      background: #fff8e8;
+    }}
+    .audit-row.status-bad td:nth-child(2),
+    .audit-row.status-bad td:nth-child(3) {{
+      background: #fff0f0;
+    }}
+    .audit-card {{
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }}
+    .audit-card.status-good {{ border-color: #9eb49f; }}
+    .audit-card.status-bad {{ border-color: #d99b9b; background: #fff7f7; }}
+    .audit-card .kpi {{ border: 0; border-top: 4px solid var(--line); }}
+    .audit-card.status-good .kpi {{ border-top-color: var(--good); }}
+    .audit-card.status-bad .kpi {{ border-top-color: var(--bad); }}
     .notice {{
       border-left: 4px solid var(--warn);
       background: var(--warn-bg);
@@ -593,6 +695,14 @@ def build_dashboard(
     }}
     .modal.multi-table .table-wrap {{
       max-height: min(180px, 22vh);
+    }}
+    .modal.modal-scroll {{
+      overflow: auto;
+    }}
+    .modal.modal-scroll .table-wrap {{
+      max-height: none;
+      overflow-x: auto;
+      overflow-y: visible;
     }}
     .modal thead th {{
       position: sticky;
@@ -768,7 +878,7 @@ def build_dashboard(
             ("revenue_per_night", "На ночь"),
         ], top_guests, None, lambda row, index: (
             f'class="clickable" data-modal-open="{esc(top_guest_modal_ids.get(str(index + 1), ""))}"'
-        ))}
+        ), table_class="sortable-table")}
       </div>
     </section>
 
@@ -780,11 +890,15 @@ def build_dashboard(
               ("dashboard_block", "Блок"),
               ("status", "Статус"),
               ("reason", "Комментарий"),
-          ], reliability)}
+          ], reliability_rows, None, lambda row, index: (
+              f'class="audit-row {esc(status_class(row.get("status_code", "")))}"'
+          ))}
         </div>
         <div class="panel span-6">
           <h2>Межлистовая сверка</h2>
-          {kpi_card("Расхождений", number(reconciliation["row_level_mismatch_count"]), "Основной лист остается источником финансов")}
+          <div class="audit-card {esc("status-bad" if reconciliation["row_level_mismatch_count"] else "status-good")}">
+            {kpi_card("Расхождений", number(reconciliation["row_level_mismatch_count"]), "Основной лист остается источником финансов")}
+          </div>
           <p>Сумма основного листа: <strong>{money(reconciliation["main_total_revenue"])}</strong></p>
           <p>Сумма листа категорий: <strong>{money(reconciliation["category_total_revenue"])}</strong></p>
         </div>
@@ -818,6 +932,44 @@ def build_dashboard(
         }});
       }});
     }}
+
+    const parseSortableValue = (value) => {{
+      const text = value.trim();
+      const numeric = text
+        .replace(/\\s/g, "")
+        .replace(/[₽%]/g, "")
+        .replace(",", ".")
+        .replace(/[^\\d.-]/g, "");
+      if (numeric && numeric !== "-" && !Number.isNaN(Number(numeric))) {{
+        return Number(numeric);
+      }}
+      return text.toLowerCase();
+    }};
+    document.querySelectorAll(".sortable-table").forEach((table) => {{
+      table.querySelectorAll("th").forEach((header, columnIndex) => {{
+        header.addEventListener("click", () => {{
+          const tbody = table.querySelector("tbody");
+          const direction = header.dataset.direction === "asc" ? "desc" : "asc";
+          table.querySelectorAll("th").forEach((item) => {{
+            item.classList.remove("sorted-asc", "sorted-desc");
+            delete item.dataset.direction;
+          }});
+          header.dataset.direction = direction;
+          header.classList.add(direction === "asc" ? "sorted-asc" : "sorted-desc");
+
+          const rows = Array.from(tbody.querySelectorAll("tr"));
+          rows.sort((left, right) => {{
+            const leftValue = parseSortableValue(left.children[columnIndex]?.innerText || "");
+            const rightValue = parseSortableValue(right.children[columnIndex]?.innerText || "");
+            const result = typeof leftValue === "number" && typeof rightValue === "number"
+              ? leftValue - rightValue
+              : String(leftValue).localeCompare(String(rightValue), "ru");
+            return direction === "asc" ? result : -result;
+          }});
+          rows.forEach((row) => tbody.appendChild(row));
+        }});
+      }});
+    }});
 
     const modalButtons = document.querySelectorAll("[data-modal-open]");
     const closeButtons = document.querySelectorAll("[data-modal-close]");
