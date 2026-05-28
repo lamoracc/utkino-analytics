@@ -8,6 +8,9 @@ python -m PyInstaller `
     --clean `
     --onefile `
     --windowed `
+    --hidden-import xlrd `
+    --hidden-import openpyxl `
+    --hidden-import et_xmlfile `
     --name UtkinoAnalytics `
     run_app.py
 
@@ -16,4 +19,3 @@ Copy-Item -LiteralPath "dist\UtkinoAnalytics.exe" -Destination "release\UtkinoAn
 Copy-Item -LiteralPath "README_CUSTOMER.txt" -Destination "release\README.txt" -Force
 
 Write-Host "Build complete: $root\release\UtkinoAnalytics.exe"
-

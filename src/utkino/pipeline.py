@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import csv
 import json
-import subprocess
 from collections import defaultdict
 from pathlib import Path
 
+from .excel_export import export_workbook_to_csv
 from .parser import (
     SERVICE_COLUMNS,
     category_to_dict,
@@ -58,22 +58,7 @@ DATA_CONTRACT = {
 
 
 def export_excel_to_csv(input_file: Path, csv_dir: Path) -> None:
-    script = Path(__file__).resolve().parents[2] / "scripts" / "export_excel_to_csv.ps1"
-    subprocess.run(
-        [
-            "powershell",
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            str(script),
-            "-InputFile",
-            str(input_file),
-            "-OutputDir",
-            str(csv_dir),
-        ],
-        check=True,
-    )
+    export_workbook_to_csv(input_file=input_file, output_dir=csv_dir)
 
 
 def build_summary(guests: list) -> dict:
