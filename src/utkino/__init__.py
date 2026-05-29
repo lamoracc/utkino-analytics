@@ -1,2 +1,0 @@
-"""Utkino analytics pipeline."""
-

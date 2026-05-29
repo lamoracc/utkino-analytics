@@ -289,7 +289,7 @@ def build_dashboard(
         for row in repeat
     ]
     metadata_rows = [
-        ("Файл", metadata.get("input_file_name", "Data/Utkino.xls")),
+        ("Файл", metadata.get("input_file_name", "report.xlsx")),
         ("Сформировано", format_report_datetime(metadata.get("generated_at", ""))),
         (
             "Excel изменен",
@@ -506,7 +506,7 @@ def build_dashboard(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Utkino Analytics 2025</title>
+  <title>Hotel Analytics 2025</title>
   <style>
     :root {{
       --bg: #f7f5ef;
@@ -855,7 +855,7 @@ def build_dashboard(
 </head>
 <body>
   <header>
-    <h1>Utkino Analytics 2025</h1>
+    <h1>Hotel Analytics 2025</h1>
     <p>Аналитический отчет по гостям, выручке, сегментам и качеству данных</p>
     <div class="meta-line">{metadata_html}</div>
   </header>

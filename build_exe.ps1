@@ -11,11 +11,11 @@ python -m PyInstaller `
     --hidden-import xlrd `
     --hidden-import openpyxl `
     --hidden-import et_xmlfile `
-    --name UtkinoAnalytics `
+    --name HotelAnalytics `
     run_app.py
 
 New-Item -ItemType Directory -Path "release" -Force | Out-Null
-Copy-Item -LiteralPath "dist\UtkinoAnalytics.exe" -Destination "release\UtkinoAnalytics.exe" -Force
+Copy-Item -LiteralPath "dist\HotelAnalytics.exe" -Destination "release\HotelAnalytics.exe" -Force
 Copy-Item -LiteralPath "README_CUSTOMER.txt" -Destination "release\README.txt" -Force
 
-Write-Host "Build complete: $root\release\UtkinoAnalytics.exe"
+Write-Host "Build complete: $root\release\HotelAnalytics.exe"

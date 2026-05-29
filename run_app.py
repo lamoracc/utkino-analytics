@@ -8,16 +8,16 @@ from pathlib import Path
 from tkinter import Tk, StringVar, filedialog, messagebox
 from tkinter import ttk
 
-from src.utkino.generator import build_report_from_excel, make_report_dir
+from src.hotel_analytics.generator import build_report_from_excel, make_report_dir
 
 
 ROOT = Path(__file__).resolve().parent
 
 
-class UtkinoApp:
+class HotelAnalyticsApp:
     def __init__(self, root: Tk) -> None:
         self.root = root
-        self.root.title("Utkino Analytics")
+        self.root.title("Hotel Analytics")
         self.root.geometry("680x330")
         self.root.minsize(620, 300)
 
@@ -32,7 +32,7 @@ class UtkinoApp:
         frame = ttk.Frame(self.root, padding=20)
         frame.pack(fill="both", expand=True)
 
-        title = ttk.Label(frame, text="Utkino Analytics", font=("Segoe UI", 16, "bold"))
+        title = ttk.Label(frame, text="Hotel Analytics", font=("Segoe UI", 16, "bold"))
         title.pack(anchor="w")
 
         subtitle = ttk.Label(
@@ -201,5 +201,5 @@ class UtkinoApp:
 if __name__ == "__main__":
     os.chdir(ROOT)
     window = Tk()
-    app = UtkinoApp(window)
+    app = HotelAnalyticsApp(window)
     window.mainloop()

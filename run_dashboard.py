@@ -1,14 +1,20 @@
 from pathlib import Path
 
-from src.utkino.generator import build_report_from_excel, make_report_dir
+from src.hotel_analytics.generator import build_report_from_excel, make_report_dir
 
 
 ROOT = Path(__file__).resolve().parent
 
 
+def default_input_file() -> Path:
+    data_dir = ROOT / "Data"
+    candidates = sorted(data_dir.glob("*.xls*"))
+    return candidates[0] if candidates else data_dir / "report.xlsx"
+
+
 if __name__ == "__main__":
     result = build_report_from_excel(
-        input_file=ROOT / "Data" / "Utkino.xls",
+        input_file=default_input_file(),
         report_dir=make_report_dir(ROOT / "reports"),
     )
     print(f"Guests parsed: {result['summary']['guest_count']}")
